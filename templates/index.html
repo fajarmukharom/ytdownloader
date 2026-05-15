@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Downloader</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    header h1 { font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    header h1 span { color: #ff4444; }
+    header p { margin-top: 6px; color: #64748b; font-size: 0.875rem; }
+
+    .card {
+      background: #1a1f35;
+      border: 1px solid #2d3554;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    /* ── URL section ── */
+    .url-wrap { position: relative; }
+    .url-wrap input {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1.5px solid #2d3554;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      padding: 11px 42px 11px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .url-wrap input:focus { border-color: #4d5b7a; }
+    .url-wrap input.warn { border-color: #f59e0b; }
+    .url-wrap input.ok   { border-color: #22c55e; }
+
+    .url-spinner {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px;
+      border: 2px solid #2d3554; border-top-color: #ff4444;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .url-spinner.show { display: block; }
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+    .url-msg { font-size: 0.78rem; margin-top: 5px; min-height: 1em; }
+    .url-msg.warn { color: #f59e0b; }
+    .url-msg.error { color: #f87171; }
+
+    /* ── Video info card ── */
+    .video-card {
+      margin-top: 16px;
+      background: #0f0f1a;
+      border: 1px solid #2d3554;
+      border-radius: 12px;
+      padding: 14px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+    }
+    .video-card.show { display: flex; }
+    .video-thumb {
+      width: 96px;
+      height: 54px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: #2d3554;
+    }
+    .video-meta { flex: 1; min-width: 0; }
+    .video-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .video-duration { font-size: 0.75rem; color: #64748b; margin-top: 3px; }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: #2d3554; margin: 18px 0; }
+
+    /* ── Options panel ── */
+    .options-panel { display: none; }
+    .options-panel.show { display: block; }
+
+    label.field-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    /* ── Format grid ── */
+    .format-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .fmt-radio { display: none; }
+    .fmt-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      background: #1a1f35;
+      border: 1.5px solid #2d3554;
+      border-radius: 10px;
+      padding: 10px 8px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      text-align: center;
+    }
+    .fmt-radio:checked + .fmt-label {
+      border-color: #ff4444;
+      background: #1f0a0a;
+    }
+    .fmt-label:hover { border-color: #4d5b7a; }
+    .fmt-icon { font-size: 1.2rem; }
+    .fmt-name { font-size: 0.875rem; font-weight: 700; color: #e2e8f0; }
+    .fmt-sub  { font-size: 0.7rem; color: #64748b; }
+    .fmt-badge {
+      font-size: 0.6rem;
+      background: #ff4444;
+      color: #fff;
+      padding: 1px 5px;
+      border-radius: 99px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* ── Timestamp section ── */
+    .clip-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      margin-bottom: 0;
+    }
+    .clip-toggle-row input[type=checkbox] { accent-color: #ff4444; width: 15px; height: 15px; cursor: pointer; }
+    .clip-toggle-row span { font-size: 0.875rem; color: #94a3b8; }
+
+    .clip-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.25s ease, opacity 0.2s ease;
+      opacity: 0;
+    }
+    .clip-body.open { max-height: 200px; opacity: 1; }
+
+    .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .time-row label { font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block; }
+    .time-input {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1.5px solid #2d3554;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.05em;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .time-input:focus { border-color: #ff4444; }
+    .time-hint { font-size: 0.72rem; color: #475569; margin-top: 6px; }
+    .time-error { font-size: 0.78rem; color: #f87171; margin-top: 5px; display: none; }
+
+    /* ── Download button ── */
+    .btn-dl {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #ff4444;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+    }
+    .btn-dl:hover:not(:disabled) { background: #e03333; }
+    .btn-dl:active { transform: scale(0.98); }
+    .btn-dl:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Progress ── */
+    .progress-area { display: none; margin-top: 20px; }
+    .progress-area.show { display: block; }
+    .progress-track {
+      background: #0f0f1a;
+      border-radius: 99px;
+      height: 7px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff4444, #ff8080);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+    .progress-row { display: flex; justify-content: space-between; }
+    .progress-status { font-size: 0.82rem; color: #94a3b8; }
+    .progress-pct { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; }
+
+    /* ── Error ── */
+    .error-box {
+      background: #1f0a0a; border: 1px solid #7f1d1d;
+      border-radius: 10px; padding: 14px 16px;
+      margin-top: 16px; display: none;
+    }
+    .error-box.show { display: block; }
+    .error-msg { color: #fca5a5; font-size: 0.875rem; font-weight: 600; }
+    .error-sug  { color: #94a3b8; font-size: 0.8rem; margin-top: 4px; }
+
+    /* ── Result ── */
+    .result-area {
+      background: #0a1f0f; border: 1px solid #14532d;
+      border-radius: 10px; padding: 16px;
+      margin-top: 16px; display: none;
+    }
+    .result-area.show { display: block; }
+    .result-filename {
+      font-weight: 600; color: #86efac; font-size: 0.875rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+    }
+    .result-size { font-size: 0.78rem; color: #4ade80; margin-bottom: 12px; }
+    .result-btns { display: flex; gap: 10px; }
+    .btn-result {
+      flex: 1; padding: 10px; font-size: 0.875rem; font-weight: 600;
+      border: none; border-radius: 8px; cursor: pointer;
+      text-align: center; text-decoration: none; display: block;
+      transition: background 0.15s;
+    }
+    .btn-green { background: #22c55e; color: #fff; }
+    .btn-green:hover { background: #16a34a; }
+    .btn-gray  { background: #2d3554; color: #e2e8f0; }
+    .btn-gray:hover { background: #3a4568; }
+
+    /* ── History ── */
+    .history-wrap { width: 100%; max-width: 580px; margin-top: 18px; }
+    .history-wrap h2 {
+      font-size: 0.72rem; font-weight: 600; color: #475569;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin-bottom: 10px; padding-left: 2px;
+    }
+    .history-list { list-style: none; }
+    .history-item {
+      display: flex; align-items: center; gap: 10px;
+      background: #1a1f35; border: 1px solid #2d3554;
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 7px;
+      transition: border-color 0.15s;
+    }
+    .history-item:hover { border-color: #4d5b7a; }
+    .h-icon { font-size: 1rem; flex-shrink: 0; }
+    .h-name {
+      flex: 1; font-size: 0.82rem; color: #cbd5e1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      cursor: pointer; text-decoration: none;
+    }
+    .h-name:hover { color: #fff; }
+    .h-size { font-size: 0.72rem; color: #475569; white-space: nowrap; }
+    .h-del {
+      background: none; border: none; color: #475569; cursor: pointer;
+      font-size: 0.9rem; padding: 3px 6px; border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .h-del:hover { background: #7f1d1d; color: #fca5a5; }
+    .history-empty { font-size: 0.82rem; color: #475569; padding: 4px 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span>▶</span> YouTube Downloader</h1>
+  <p>Download &amp; crop video YouTube langsung dari browser</p>
+</header>
+
+<div class="card">
+
+  <!-- Step 1: URL -->
+  <div class="url-wrap">
+    <input type="text" id="url-input" placeholder="Paste URL YouTube di sini..." autocomplete="off" spellcheck="false">
+    <div class="url-spinner" id="url-spinner"></div>
+  </div>
+  <div class="url-msg" id="url-msg"></div>
+
+  <!-- Video info card -->
+  <div class="video-card" id="video-card">
+    <img class="video-thumb" id="video-thumb" src="" alt="thumbnail">
+    <div class="video-meta">
+      <div class="video-title" id="video-title"></div>
+      <div class="video-duration" id="video-duration"></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Options (shown after info loaded) -->
+  <div class="options-panel" id="options-panel">
+    <div class="divider"></div>
+
+    <!-- Format -->
+    <label class="field-label">Format & Resolusi</label>
+    <div class="format-grid" id="format-grid"></div>
+
+    <!-- Timestamp -->
+    <label class="clip-toggle-row" for="clip-cb">
+      <input type="checkbox" id="clip-cb">
+      <span>Mau potong bagian tertentu?</span>
+    </label>
+    <div class="clip-body" id="clip-body">
+      <div class="time-row">
+        <div>
+          <label for="start-input">Mulai dari</label>
+          <input type="text" class="time-input" id="start-input" placeholder="00:00" maxlength="8" inputmode="numeric">
+        </div>
+        <div>
+          <label for="end-input">Sampai</label>
+          <input type="text" class="time-input" id="end-input" placeholder="00:00" maxlength="8" inputmode="numeric">
+        </div>
+      </div>
+      <div class="time-hint">Format: MM:SS atau HH:MM:SS</div>
+      <div class="time-error" id="time-error"></div>
+    </div>
+
+    <!-- Download button -->
+    <button class="btn-dl" id="dl-btn">Mulai Download</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-area" id="progress-area">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-row">
+      <span class="progress-status" id="progress-status">Memulai...</span>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="error-box">
+    <div class="error-msg" id="error-msg"></div>
+    <div class="error-sug" id="error-sug"></div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-area" id="result-area">
+    <div class="result-filename" id="result-filename"></div>
+    <div class="result-size" id="result-size"></div>
+    <div class="result-btns">
+      <a id="result-link" href="#" class="btn-result btn-green">Download File</a>
+      <button class="btn-result btn-gray" id="reset-btn">Download Lagi</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- History -->
+<div class="history-wrap">
+  <h2>Riwayat Download</h2>
+  <ul class="history-list" id="history-list">
+    <li class="history-empty">Belum ada file yang didownload.</li>
+  </ul>
+</div>
+
+<script>
+// ── DOM refs ────────────────────────────────────────────────────────────────────
+const urlInput     = document.getElementById('url-input');
+const urlSpinner   = document.getElementById('url-spinner');
+const urlMsg       = document.getElementById('url-msg');
+const videoCard    = document.getElementById('video-card');
+const videoThumb   = document.getElementById('video-thumb');
+const videoTitle   = document.getElementById('video-title');
+const videoDur     = document.getElementById('video-duration');
+const optionsPanel = document.getElementById('options-panel');
+const formatGrid   = document.getElementById('format-grid');
+const clipCb       = document.getElementById('clip-cb');
+const clipBody     = document.getElementById('clip-body');
+const startInput   = document.getElementById('start-input');
+const endInput     = document.getElementById('end-input');
+const timeError    = document.getElementById('time-error');
+const dlBtn        = document.getElementById('dl-btn');
+const progressArea = document.getElementById('progress-area');
+const progressFill = document.getElementById('progress-fill');
+const progressStat = document.getElementById('progress-status');
+const progressPct  = document.getElementById('progress-pct');
+const errorBox     = document.getElementById('error-box');
+const errorMsg     = document.getElementById('error-msg');
+const errorSug     = document.getElementById('error-sug');
+const resultArea   = document.getElementById('result-area');
+const resultFname  = document.getElementById('result-filename');
+const resultSize   = document.getElementById('result-size');
+const resultLink   = document.getElementById('result-link');
+const resetBtn     = document.getElementById('reset-btn');
+const historyList  = document.getElementById('history-list');
+
+// ── Constants ───────────────────────────────────────────────────────────────────
+const YT_RE = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?.*v=|shorts\/)|youtu\.be\/)/;
+
+const RES_META = {
+  '360p':  { icon: '🎬', name: '360p',  sub: 'SD',       badge: null },
+  '480p':  { icon: '🎬', name: '480p',  sub: 'SD+',      badge: null },
+  '720p':  { icon: '🎬', name: '720p',  sub: 'HD',       badge: 'Recommended' },
+  '1080p': { icon: '🎬', name: '1080p', sub: 'Full HD',  badge: null },
+  '1440p': { icon: '🎬', name: '1440p', sub: '2K',       badge: null },
+  '2160p': { icon: '🎬', name: '2160p', sub: '4K',       badge: '4K' },
+  '4320p': { icon: '🎬', name: '4320p', sub: '8K',       badge: '8K' },
+  'audio': { icon: '🎵', name: 'MP3',   sub: 'Audio',    badge: null },
+};
+
+// ── State ───────────────────────────────────────────────────────────────────────
+let debounceTimer = null;
+let currentVideoInfo = null;
+
+// ── URL debounce & fetch info ───────────────────────────────────────────────────
+urlInput.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  const val = urlInput.value.trim();
+
+  setUrlState('idle');
+  hideOptions();
+
+  if (!val) return;
+
+  if (!YT_RE.test(val)) {
+    setUrlState('warn', 'URL-nya kayaknya bukan dari YouTube.');
+    return;
+  }
+
+  debounceTimer = setTimeout(() => fetchInfo(val), 800);
+});
+
+function setUrlState(state, msg = '') {
+  urlInput.classList.remove('warn', 'ok');
+  urlMsg.className = 'url-msg';
+  urlMsg.textContent = msg;
+  urlSpinner.classList.remove('show');
+
+  if (state === 'loading') urlSpinner.classList.add('show');
+  if (state === 'warn')  { urlInput.classList.add('warn'); urlMsg.classList.add('warn'); }
+  if (state === 'error') { urlInput.classList.add('warn'); urlMsg.classList.add('error'); }
+  if (state === 'ok')    { urlInput.classList.add('ok'); }
+}
+
+async function fetchInfo(url) {
+  setUrlState('loading');
+  hideOptions();
+
+  let res, data;
+  try {
+    res  = await fetch('/info', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({url}) });
+    data = await res.json();
+  } catch {
+    setUrlState('error', 'Nggak bisa konek ke server.');
+    return;
+  }
+
+  if (!res.ok) {
+    setUrlState('error', data.error + (data.suggestion ? ' ' + data.suggestion : ''));
+    return;
+  }
+
+  setUrlState('ok');
+  currentVideoInfo = data;
+  showVideoCard(data);
+  buildFormatGrid(data.resolutions);
+  optionsPanel.classList.add('show');
+}
+
+// ── Video info card ──────────────────────────────────────────────────────────────
+function showVideoCard(info) {
+  videoThumb.src = info.thumbnail || '';
+  videoThumb.style.display = info.thumbnail ? '' : 'none';
+  videoTitle.textContent = info.title || 'Video YouTube';
+  videoDur.textContent = info.duration_str ? `Durasi: ${info.duration_str}` : '';
+  videoCard.classList.add('show');
+}
+
+function hideOptions() {
+  videoCard.classList.remove('show');
+  optionsPanel.classList.remove('show');
+  currentVideoInfo = null;
+  hideResult();
+  hideError();
+  progressArea.classList.remove('show');
+}
+
+// ── Format grid ──────────────────────────────────────────────────────────────────
+function buildFormatGrid(resolutions) {
+  formatGrid.innerHTML = '';
+  let firstChecked = false;
+
+  // Pick default: prefer 720p, else highest non-audio available
+  const preferred = ['720p', '1080p', '480p', '360p', '1440p', '2160p', '4320p', 'audio'];
+  const defaultRes = preferred.find(r => resolutions.includes(r)) || resolutions[0];
+
+  resolutions.forEach(res => {
+    const m = RES_META[res] || { icon: '🎬', name: res, sub: '', badge: null };
+    const id = `fmt-${res}`;
+    const checked = (res === defaultRes) ? 'checked' : '';
+
+    formatGrid.insertAdjacentHTML('beforeend', `
+      <div>
+        <input type="radio" name="resolution" id="${id}" value="${res}" class="fmt-radio" ${checked}>
+        <label for="${id}" class="fmt-label">
+          <span class="fmt-icon">${m.icon}</span>
+          <span class="fmt-name">${m.name}</span>
+          <span class="fmt-sub">${m.sub}</span>
+          ${m.badge ? `<span class="fmt-badge">${m.badge}</span>` : ''}
+        </label>
+      </div>
+    `);
+  });
+}
+
+// ── Timestamp: clip toggle ───────────────────────────────────────────────────────
+clipCb.addEventListener('change', () => {
+  clipBody.classList.toggle('open', clipCb.checked);
+  if (!clipCb.checked) {
+    startInput.value = '';
+    endInput.value = '';
+    timeError.style.display = 'none';
+  }
+});
+
+// ── Timestamp: auto-colon ────────────────────────────────────────────────────────
+function setupTimeInput(el) {
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace') {
+      const pos = el.selectionStart;
+      // If cursor is right after a colon, delete the colon too
+      if (el.selectionStart === el.selectionEnd && pos > 0 && el.value[pos - 1] === ':') {
+        e.preventDefault();
+        el.value = el.value.slice(0, pos - 1) + el.value.slice(pos);
+        el.setSelectionRange(pos - 1, pos - 1);
+        validateTimestamps();
+      }
+    }
+  });
+
+  el.addEventListener('input', () => {
+    const cursor = el.selectionStart;
+    const before = el.value;
+    let digits = before.replace(/\D/g, '').slice(0, 6);
+
+    // Insert colons at positions 2 and 4 (of digits)
+    let formatted = '';
+    for (let i = 0; i < digits.length; i++) {
+      if (i === 2 || i === 4) formatted += ':';
+      formatted += digits[i];
+    }
+
+    if (formatted !== before) {
+      el.value = formatted;
+      // Move cursor to end if we just added a colon
+      const newCursor = formatted.length > before.length ? formatted.length : cursor;
+      el.setSelectionRange(newCursor, newCursor);
+    }
+
+    validateTimestamps();
+  });
+}
+
+setupTimeInput(startInput);
+setupTimeInput(endInput);
+
+function parseTs(s) {
+  s = s.trim();
+  if (!s) return -1;
+  const parts = s.split(':').map(Number);
+  if (parts.some(isNaN)) return NaN;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return NaN;
+}
+
+function validateTimestamps() {
+  if (!clipCb.checked) { timeError.style.display = 'none'; return true; }
+  const sv = startInput.value.trim();
+  const ev = endInput.value.trim();
+  const s = parseTs(sv), e = parseTs(ev);
+  if ((sv && isNaN(s)) || (ev && isNaN(e))) {
+    showTimeError('Format waktu salah. Pakai MM:SS atau HH:MM:SS.');
+    return false;
+  }
+  if (s >= 0 && e >= 0 && e <= s) {
+    showTimeError('Waktu akhir harus lebih besar dari waktu mulai.');
+    return false;
+  }
+  timeError.style.display = 'none';
+  return true;
+}
+
+function showTimeError(msg) {
+  timeError.textContent = msg;
+  timeError.style.display = 'block';
+}
+
+// ── Download ─────────────────────────────────────────────────────────────────────
+dlBtn.addEventListener('click', startDownload);
+
+async function startDownload() {
+  if (!validateTimestamps()) return;
+
+  const url = urlInput.value.trim();
+  const resolution = document.querySelector('input[name="resolution"]:checked')?.value;
+  if (!url || !resolution) return;
+
+  const start = clipCb.checked ? startInput.value.trim() : '';
+  const end   = clipCb.checked ? endInput.value.trim() : '';
+
+  // UI: downloading state
+  dlBtn.disabled = true;
+  dlBtn.textContent = 'Sedang memproses...';
+  hideError();
+  hideResult();
+  progressArea.classList.add('show');
+  setProgress(0, 'Memulai...');
+
+  let res, json;
+  try {
+    res  = await fetch('/download', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({url, resolution, start, end}) });
+    json = await res.json();
+  } catch {
+    showError('Nggak bisa konek ke server.', 'Coba refresh halaman.');
+    return;
+  }
+
+  if (!res.ok) {
+    showError(json.error, json.suggestion);
+    return;
+  }
+
+  listenProgress(json.task_id);
+}
+
+function listenProgress(taskId) {
+  const src = new EventSource(`/progress/${taskId}`);
+
+  src.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+
+    if (d.error) {
+      src.close();
+      showError(d.error, d.suggestion);
+      return;
+    }
+
+    setProgress(d.progress, d.status);
+
+    if (d.done && d.filename) {
+      src.close();
+      progressArea.classList.remove('show');
+      showResult(d.filename, d.filesize, d.download_url);
+      dlBtn.disabled = false;
+      dlBtn.textContent = 'Mulai Download';
+      loadHistory();
+    }
+  };
+
+  src.onerror = () => {
+    src.close();
+    showError('Koneksi ke server terputus.', 'Coba lagi.');
+  };
+}
+
+function setProgress(pct, status) {
+  progressFill.style.width = pct + '%';
+  progressPct.textContent  = pct + '%';
+  progressStat.textContent = status || 'Memproses...';
+}
+
+// ── Error / Result helpers ───────────────────────────────────────────────────────
+function showError(msg, sug) {
+  errorMsg.textContent = msg || 'Waduh, ada yang error nih.';
+  errorSug.textContent = sug || 'Coba lagi, atau restart app-nya.';
+  errorBox.classList.add('show');
+  progressArea.classList.remove('show');
+  dlBtn.disabled = false;
+  dlBtn.textContent = 'Mulai Download';
+}
+function hideError() { errorBox.classList.remove('show'); }
+
+function showResult(filename, size, url) {
+  resultFname.textContent = filename;
+  resultSize.textContent  = size || '';
+  resultLink.href = url;
+  resultLink.setAttribute('download', filename);
+  resultArea.classList.add('show');
+}
+function hideResult() { resultArea.classList.remove('show'); }
+
+// ── Reset ────────────────────────────────────────────────────────────────────────
+resetBtn.addEventListener('click', () => {
+  urlInput.value = '';
+  setUrlState('idle');
+  hideOptions();
+  progressArea.classList.remove('show');
+  clipCb.checked = false;
+  clipBody.classList.remove('open');
+  startInput.value = '';
+  endInput.value   = '';
+  timeError.style.display = 'none';
+  dlBtn.disabled = false;
+  dlBtn.textContent = 'Mulai Download';
+  urlInput.focus();
+});
+
+// ── History ───────────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  let files;
+  try { files = await (await fetch('/files')).json(); } catch { return; }
+
+  if (!files.length) {
+    historyList.innerHTML = '<li class="history-empty">Belum ada file yang didownload.</li>';
+    return;
+  }
+
+  historyList.innerHTML = files.map(f => {
+    const icon = f.name.endsWith('.mp3') ? '🎵' : '🎬';
+    return `<li class="history-item">
+      <span class="h-icon">${icon}</span>
+      <a class="h-name" href="${f.url}" download="${f.name}" title="${f.name}">${f.name}</a>
+      <span class="h-size">${f.size}</span>
+      <button class="h-del" data-name="${f.name}" title="Hapus">✕</button>
+    </li>`;
+  }).join('');
+
+  historyList.querySelectorAll('.h-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/files/${encodeURIComponent(btn.dataset.name)}`, {method:'DELETE'});
+      loadHistory();
+    });
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────────
+document.addEventListener('paste', () => urlInput.focus());
+loadHistory();
+</script>
+</body>
+</html>
