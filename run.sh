@@ -49,6 +49,9 @@ cd "$SCRIPT_DIR"
 python3 app.py &
 APP_PID=$!
 
+# Ctrl+C / kill → matiin Python juga
+trap 'echo ""; echo "Menghentikan app..."; kill $APP_PID 2>/dev/null; wait $APP_PID 2>/dev/null; echo "App dihentikan."; exit 0' INT TERM
+
 # [5] Wait
 sleep 2
 
