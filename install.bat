@@ -12,11 +12,29 @@ REM [1/5] Python 3
 echo [1/5] Mengecek Python 3...
 where python >nul 2>nul
 if errorlevel 1 (
-    echo [X] Python belum terinstall.
-    echo     Download di https://www.python.org/downloads/
-    echo     PENTING: centang "Add Python to PATH" saat install.
+    where winget >nul 2>nul
+    if errorlevel 1 (
+        echo [X] Python belum terinstall, dan winget tidak ditemukan untuk auto-install.
+        echo     Download manual di https://www.python.org/downloads/
+        echo     PENTING: centang "Add Python to PATH" saat install.
+        pause
+        exit /b 1
+    )
+    echo     Python belum ketemu, menginstall via winget, mohon tunggu...
+    winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements
+    if errorlevel 1 (
+        echo [X] Gagal install Python via winget.
+        echo     Install manual di https://www.python.org/downloads/
+        echo     PENTING: centang "Add Python to PATH" saat install.
+        pause
+        exit /b 1
+    )
+    echo [OK] Python terinstall
+    echo.
+    echo     Tutup jendela ini, buka Command Prompt baru, lalu jalankan install.bat
+    echo     lagi supaya PATH ter-refresh dan proses instalasi bisa dilanjutkan.
     pause
-    exit /b 1
+    exit /b 0
 )
 for /f "tokens=2" %%v in ('python --version 2^>^&1') do set PYVER=%%v
 echo [OK] Python %PYVER% ditemukan

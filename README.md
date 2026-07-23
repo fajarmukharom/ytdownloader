@@ -87,8 +87,10 @@ Klik dua kali file **`install.bat`**.
 Kalau muncul peringatan **Windows protected your PC** (SmartScreen), klik
 **More info** lalu **Run anyway** — ini normal untuk script buatan sendiri.
 
-Script ini akan otomatis menginstall:
-- FFmpeg (via winget, package manager bawaan Windows 10/11)
+Script ini akan otomatis menginstall (semua via winget, package manager
+bawaan Windows 10/11):
+- Python (kalau belum ada di komputer kamu)
+- FFmpeg (untuk proses merge & convert video)
 - pytubefix (untuk download dari YouTube)
 - Flask (web server)
 
@@ -99,8 +101,11 @@ Tunggu sampai muncul pesan:
     Jalankan run.bat untuk mulai.
 ```
 
-> Kalau FFmpeg baru diinstall, **tutup dulu jendela Command Prompt-nya**
-> sebelum lanjut ke langkah berikutnya, supaya PATH ter-refresh.
+> **Kalau Python atau FFmpeg baru diinstall di tengah proses,** installer akan
+> minta kamu **menutup jendela ini, membuka Command Prompt baru, lalu
+> menjalankan `install.bat` lagi** — ini perlu supaya PATH ter-refresh dan
+> Windows bisa mengenali command `python`/`ffmpeg` yang baru diinstall.
+> Jalankan `install.bat` berulang sampai muncul pesan "Instalasi selesai!".
 
 ---
 
@@ -198,7 +203,11 @@ sendiri (tidak bersertifikat), bukan tanda file berbahaya.
 
 **`'python' is not recognized as an internal or external command`** *(Windows)*
 
-Python belum masuk ke PATH. Install ulang Python dari
+Jalankan `install.bat` — kalau Python belum ada, script akan otomatis
+menginstallnya via winget. Setelah itu, tutup Command Prompt, buka yang baru,
+lalu jalankan `install.bat` sekali lagi supaya PATH ter-refresh.
+
+Kalau winget tidak tersedia di komputer kamu, install manual dari
 [python.org/downloads](https://www.python.org/downloads/) dan pastikan centang
 **"Add Python to PATH"** di langkah pertama installer.
 
