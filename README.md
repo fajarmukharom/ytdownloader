@@ -16,21 +16,28 @@ Gratis, offline-capable, dan tanpa langganan apapun.
 
 Sebelum mulai, pastikan kamu punya:
 
-- **macOS** (aplikasi ini didesain untuk macOS)
-- **Python 3.8 ke atas** — cek dengan menjalankan `python3 --version` di Terminal
+- **macOS** atau **Windows 10/11**
+- **Python 3.8 ke atas** — cek dengan menjalankan `python3 --version` (macOS) atau `python --version` (Windows)
 - **Koneksi internet** — untuk download video dari YouTube
 
 Kalau Python belum terinstall, download di [python.org/downloads](https://www.python.org/downloads/)
+
+> **Windows:** saat install Python, jangan lupa centang **"Add Python to PATH"**
+> di layar pertama installer. Kalau kelewat, install ulang Python dan centang itu.
 
 ---
 
 ## Cara Install
 
-### Langkah 1 — Buka Terminal
+Pilih sesuai OS kamu.
+
+### macOS
+
+#### Langkah 1 — Buka Terminal
 
 Tekan `Command + Space`, ketik **Terminal**, lalu tekan Enter.
 
-### Langkah 2 — Masuk ke folder project
+#### Langkah 2 — Masuk ke folder project
 
 Setelah Terminal terbuka, kamu perlu pindah ke folder tempat project ini berada.
 Jalankan perintah berikut (sesuaikan dengan lokasi folder kamu):
@@ -45,7 +52,7 @@ cd ~/Downloads/ytdownloader
 > Cara cek lokasi folder yang benar: buka Finder, cari folder `ytdownloader`,
 > lalu drag & drop folder itu ke jendela Terminal — path-nya akan otomatis terisi.
 
-### Langkah 3 — Jalankan installer
+#### Langkah 3 — Jalankan installer
 
 ```bash
 ./install.sh
@@ -67,17 +74,50 @@ Tunggu sampai muncul pesan:
 > Proses install bisa memakan waktu beberapa menit tergantung koneksi internet,
 > terutama saat menginstall FFmpeg.
 
+### Windows
+
+#### Langkah 1 — Buka folder project di File Explorer
+
+Buka folder `ytdownloader` (misalnya di `Downloads` atau `Desktop`).
+
+#### Langkah 2 — Jalankan installer
+
+Klik dua kali file **`install.bat`**.
+
+Kalau muncul peringatan **Windows protected your PC** (SmartScreen), klik
+**More info** lalu **Run anyway** — ini normal untuk script buatan sendiri.
+
+Script ini akan otomatis menginstall:
+- FFmpeg (via winget, package manager bawaan Windows 10/11)
+- pytubefix (untuk download dari YouTube)
+- Flask (web server)
+
+Tunggu sampai muncul pesan:
+
+```
+[OK] Instalasi selesai!
+    Jalankan run.bat untuk mulai.
+```
+
+> Kalau FFmpeg baru diinstall, **tutup dulu jendela Command Prompt-nya**
+> sebelum lanjut ke langkah berikutnya, supaya PATH ter-refresh.
+
 ---
 
 ## Cara Pakai
 
+Tampilan dan fitur di web browser **sama persis** di macOS maupun Windows —
+bedanya cuma cara menjalankan app-nya.
+
 ### Langkah 1 — Jalankan aplikasi
 
-Pastikan Terminal masih di folder `ytdownloader`, lalu jalankan:
+**macOS** — pastikan Terminal masih di folder `ytdownloader`, lalu jalankan:
 
 ```bash
 ./run.sh
 ```
+
+**Windows** — klik dua kali file **`run.bat`** (atau jalankan `run.bat` dari Command Prompt).
 
 Browser kamu akan otomatis terbuka dan menampilkan halaman aplikasi.
 Kalau tidak terbuka otomatis, buka browser dan ketik: `http://localhost:8421`
@@ -112,7 +152,9 @@ File akan tersimpan otomatis di folder `downloads/` di dalam folder project.
 
 ## Menghentikan Aplikasi
 
-Di jendela Terminal yang menjalankan `./run.sh`, tekan `Ctrl + C`.
+**macOS** — di jendela Terminal yang menjalankan `./run.sh`, tekan `Ctrl + C`.
+
+**Windows** — di jendela Command Prompt yang menjalankan `run.bat`, tekan `Ctrl + C`.
 
 ---
 
@@ -121,8 +163,11 @@ Di jendela Terminal yang menjalankan `./run.sh`, tekan `Ctrl + C`.
 ```
 ytdownloader/
 ├── app.py              # Backend (Flask)
-├── install.sh          # Script instalasi (jalankan sekali)
-├── run.sh              # Script menjalankan aplikasi
+├── install.sh          # Script instalasi untuk macOS (jalankan sekali)
+├── run.sh              # Script menjalankan aplikasi di macOS
+├── install.bat          # Script instalasi untuk Windows (jalankan sekali)
+├── run.bat              # Script menjalankan aplikasi di Windows
+├── requirements.txt     # Daftar dependency Python (flask, pytubefix)
 ├── claude.md           # Spesifikasi project
 ├── README.md           # File ini
 ├── downloads/          # Folder hasil download (otomatis dibuat)
@@ -134,13 +179,36 @@ ytdownloader/
 
 ## Troubleshooting
 
-**Muncul "Permission denied" saat menjalankan `./install.sh` atau `./run.sh`**
+**Muncul "Permission denied" saat menjalankan `./install.sh` atau `./run.sh`** *(macOS)*
 
 Jalankan perintah ini terlebih dahulu:
 ```bash
 chmod +x install.sh run.sh
 ```
 Lalu coba lagi.
+
+---
+
+**Muncul "Windows protected your PC" saat menjalankan `install.bat` / `run.bat`** *(Windows)*
+
+Klik **More info** lalu **Run anyway**. Ini muncul karena file `.bat` dibuat
+sendiri (tidak bersertifikat), bukan tanda file berbahaya.
+
+---
+
+**`'python' is not recognized as an internal or external command`** *(Windows)*
+
+Python belum masuk ke PATH. Install ulang Python dari
+[python.org/downloads](https://www.python.org/downloads/) dan pastikan centang
+**"Add Python to PATH"** di langkah pertama installer.
+
+---
+
+**FFmpeg tetap "not found" setelah `install.bat` selesai** *(Windows)*
+
+Tutup jendela Command Prompt, buka folder project lagi, lalu jalankan
+`run.bat` dari jendela baru — PATH baru ter-update setelah Command Prompt
+dibuka ulang.
 
 ---
 
