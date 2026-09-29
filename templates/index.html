@@ -377,8 +377,8 @@
     <div class="result-filename" id="result-filename"></div>
     <div class="result-size" id="result-size"></div>
     <div class="result-btns">
-      <a id="result-link" href="#" class="btn-result btn-green">Download File</a>
-      <button class="btn-result btn-gray" id="reset-btn">Download Lagi</button>
+      <a id="result-link" href="#" class="btn-result btn-green">Simpan Ulang</a>
+      <button class="btn-result btn-gray" id="delete-btn">Hapus</button>
     </div>
   </div>
 
@@ -420,7 +420,7 @@ const resultArea   = document.getElementById('result-area');
 const resultFname  = document.getElementById('result-filename');
 const resultSize   = document.getElementById('result-size');
 const resultLink   = document.getElementById('result-link');
-const resetBtn     = document.getElementById('reset-btn');
+const deleteBtn    = document.getElementById('delete-btn');
 const historyList  = document.getElementById('history-list');
 
 // ── Constants ───────────────────────────────────────────────────────────────────
@@ -716,11 +716,15 @@ function showResult(filename, size, url) {
   resultLink.href = url;
   resultLink.setAttribute('download', filename);
   resultArea.classList.add('show');
+  resultLink.click();  // auto-download, link tetap ada sebagai fallback
 }
 function hideResult() { resultArea.classList.remove('show'); }
 
 // ── Reset ────────────────────────────────────────────────────────────────────────
-resetBtn.addEventListener('click', () => {
+deleteBtn.addEventListener('click', async () => {
+  await fetch(`/files/${encodeURIComponent(resultFname.textContent)}`, {method:'DELETE'});
+  hideResult();
+  loadHistory();
   urlInput.value = '';
   setUrlState('idle');
   hideOptions();
