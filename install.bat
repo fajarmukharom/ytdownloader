@@ -68,18 +68,13 @@ if errorlevel 1 (
 
 REM [3/5] pytubefix
 echo [3/5] Menginstall pytubefix...
-python -c "import pytubefix" >nul 2>nul
+python -m pip install -U "pytubefix>=11.1.0"
 if errorlevel 1 (
-    python -m pip install pytubefix
-    if errorlevel 1 (
-        echo [X] Gagal install pytubefix. Coba manual: pip install pytubefix
-        pause
-        exit /b 1
-    )
-    echo [OK] pytubefix terinstall
-) else (
-    echo [OK] pytubefix sudah terinstall
+    echo [X] Gagal install pytubefix. Coba manual: pip install -U pytubefix
+    pause
+    exit /b 1
 )
+echo [OK] pytubefix terinstall (versi terbaru)
 
 REM [4/5] Flask
 echo [4/5] Menginstall Flask...

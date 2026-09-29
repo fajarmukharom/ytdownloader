@@ -50,13 +50,9 @@ fi
 
 # [4/6] pytubefix
 echo -n "[4/6] ⏳ Menginstall pytubefix...       "
-if python3 -c "import pytubefix" &>/dev/null; then
-  ok "pytubefix sudah terinstall"
-else
-  pip3 install pytubefix \
-    || fail "Gagal install Python packages. Coba: pip3 install pytubefix flask"
-  ok "pytubefix terinstall"
-fi
+pip3 install -U "pytubefix>=11.1.0" \
+  || fail "Gagal install Python packages. Coba: pip3 install -U pytubefix flask"
+ok "pytubefix terinstall (versi terbaru)"
 
 # [5/6] Flask
 echo -n "[5/6] ⏳ Menginstall Flask...           "

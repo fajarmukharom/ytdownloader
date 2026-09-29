@@ -43,7 +43,25 @@ PYTUBEFIX_STRING_ERRORS = {
 
 def classify_pytubefix_error(e):
     try:
+        from pytubefix import exceptions as ex
         from pytubefix.exceptions import VideoUnavailable, RegexMatchError, AgeRestrictedError
+        specific = [
+            ('BotDetection', "YouTube mendeteksi request sebagai bot.", "Update pytubefix: pip install -U pytubefix, lalu coba lagi."),
+            ('PoTokenRequired', "YouTube minta PO token untuk video ini.", "Update pytubefix: pip install -U pytubefix."),
+            ('LoginRequired', "Video ini butuh login.", "Nggak bisa didownload tanpa akun."),
+            ('MembersOnly', "Video ini khusus member channel.", "Nggak bisa didownload."),
+            ('VideoPrivate', "Video ini private.", "Nggak bisa didownload, maaf!"),
+            ('VideoRegionBlocked', "Video di-block di region kamu.", "Coba pakai VPN."),
+            ('LiveStreamOffline', "Live stream belum dimulai.", "Coba lagi setelah live-nya mulai."),
+            ('LiveStreamError', "Live stream masih berlangsung.", "Tunggu sampai selesai."),
+            ('LiveStreamEnded', "Live stream sudah selesai tapi rekamannya belum siap.", "Coba lagi beberapa saat lagi."),
+            ('RecordingUnavailable', "Rekaman live ini belum tersedia.", "Coba lagi beberapa saat lagi."),
+            ('VideoBlockedByCopyright', "Video di-block karena copyright.", "Nggak bisa didownload."),
+        ]
+        for name, user_msg, suggestion in specific:
+            cls = getattr(ex, name, None)
+            if cls and isinstance(e, cls):
+                return user_msg, suggestion
         if isinstance(e, AgeRestrictedError):
             return "Video ini dibatasi usia.", "Coba video lain ya."
         if isinstance(e, VideoUnavailable):
@@ -181,7 +199,7 @@ def download_worker(task_id, url, resolution, start_sec, end_sec):
         if user_msg:
             push_error(task_id, user_msg, suggestion)
         else:
-            app.logger.error(f"[{task_id}] Unexpected: {e}", exc_info=True)
+            app.logger.error(f"[{task_id}] Unexpected {type(e).__name__}: {e}", exc_info=True)
             push_error(task_id, "Waduh, ada yang error nih.", "Coba lagi, atau restart app-nya.")
 
 
